@@ -1,5 +1,0 @@
-# redux-saga
-
-## effects
-
-
