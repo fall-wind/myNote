@@ -15,6 +15,18 @@ handleClick = () => {
 
 作用：减少渲染的次数；当然开发者不了解这种批量更新 也会出现代码没达到预期的情况
 
+## 不会批量更新的场景
+
+```
+handleClick = () => {
+    setTimeout(() => {
+        this.setState({a: true})
+        this.setState({b: true})
+    })
+}
+```
+
+使用一些浏览器提供的全局API，React是不会批量更新，如addEventListener, setTimeout等
 
 ## 资料
 
