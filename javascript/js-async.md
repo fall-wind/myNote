@@ -24,3 +24,29 @@
 - UI rendering
 
 ### 微任务（micro-task）
+
+- process.nextTick
+- Promise
+- [MutationObserver](https://developer.mozilla.org/en-US/docs/Web/API/MessageChannel) (监听dom节点的变化，执行回调函数)
+- MessageChannel
+
+other question： 
+
+vue的nextTick为何使用microtask???  
+
+JS 的 event loop 执行时会区分 task 和 microtask，引擎在每个 task 执行完毕，从队列中取下一个 task 来执行之前，会先执行完所有 microtask 队列中的 microtask。
+
+HTML标准中， 在每个task运行后， UI都会渲染， 那么在 microtask 中就完成数据更新，当前 task 结束就可以得到最新的 UI 了。反之如果新建一个 task 来做数据更新，那么渲染就会进行两次
+
+[问题链接](https://www.zhihu.com/question/55364497)
+
+
+## 优先级
+
+idle观察者>> io观察者 >> check观察者
+
+按先后顺序排布
+
+- process.nextTick
+- setTimeOut
+- setImmediate

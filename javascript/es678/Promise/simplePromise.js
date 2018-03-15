@@ -29,7 +29,42 @@ class SPromise {
         }
     }
 
-    then(fun) {
+    then(onResolved, onRejected) {
+        const self = this
+        if (this.status === 'resolved') {
+            return new Promise(function(resolve, reject) {
+
+            })
+        }
+
+        if (this.status === 'rejected') {
+            return new Promise(function(resolve, reject) {
+
+            })
+        }
+
+        if (this.status === 'pending') {
+            return new Promise(function(resolve, reject) {
+
+            })
+        }
+    }
+}
+
+const PENDING = "pending"
+const RESOLVED = "resolved"
+const REJECTED = "rejected"
+
+class LPromise {
+    constructor(handler) {
+        this.status = PENDING
+        this.next = []
+        const self = this
+
+        
+    }
+    
+    then(rejectCallback) {
 
     }
 }
