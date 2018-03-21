@@ -1,5 +1,7 @@
 ## 简单学习Vue
 
+read and copy 官网
+
 ### 计算属性和监听器
 
 #### 计算属性
@@ -216,3 +218,162 @@ v-for指令的优先级高于v-if
   v-bind:key="item.id"
 ></my-component>
 ```
+
+### 事件
+使用```v-on```指令绑定dom事件  
+特殊变量```$event```指代了原始的dom事件
+
+
+事件修饰符
+
+- .stop
+- .prevent
+- .once
+- .capture
+- .self
+
+
+按键修饰符
+
+```
+<!-- 只有在 `keyCode` 是 13 时调用 `vm.submit()` -->
+<input v-on:keyup.13="submit">
+```
+
+```
+<!-- 同上 -->
+<input v-on:keyup.enter="submit">
+
+<!-- 缩写语法 -->
+<input @keyup.enter="submit">
+```
+
+### 表单输入绑定
+```v-model```指令在表单 ```<input>``` 及 ```<textarea>``` 元素上创建双向数据绑定
+
+```
+<input v-model="message" placeholder="edit me">
+<p>Message is: {{ message }}</p>
+
+new Vue({
+    data: {
+        message: 'heheh',
+    }
+})
+
+```
+
+修饰符： 
+
+```
+<!-- 在“change”时而非“input”时更新 -->
+<input v-model.lazy="msg" >
+```
+
+
+## 组件
+
+全局注册： 
+
+```
+Vue.component('my-try-component', {
+    template: '<p>ss</p>'
+})
+```
+
+局部注册
+
+```
+new Vue({
+    component: {
+        template: '<p>sssss</p>'
+    }
+})
+```
+
+
+构造 Vue 实例时传入的各种选项大多数都可以在组件里使用,但是data必须是函数
+```
+Vue.component('ss-comp', {
+    template: '<div>{{ name }}</div>',
+    data: function() {
+        return {
+            name: 'yt'
+        }
+    }
+})
+```
+
+组件的组合
+
+使用props传递数据：
+
+组件的作用域是孤立的。这意味着不能 (也不应该) 在子组件的模板内直接引用父组件的数据。  
+父组件的数据需要通过 prop 才能下发到子组件中
+
+```
+Vue.component('child', {
+    template: '<div>{{name}}</div>',
+    props: ['name'],
+})
+
+// use
+
+<child name="hehe"></child>
+```
+
+camelCase vs. kebab-case
+
+HTML 特性是不区分大小写的。所以，当使用的不是字符串模板时，camelCase (驼峰式命名) 的 prop 需要转换为相对应的 kebab-case (短横线分隔式命名)：
+
+```
+Vue.component('child', {
+  // 在 JavaScript 中使用 camelCase
+  props: ['myBigName'],
+  template: '<span>{{ myBigName }}</span>'
+})
+
+// use
+
+<child my-big-name="yangtuo"></child>
+```
+
+动态绑定props  
+
+使用```v-bind```指令绑定
+
+```
+<div id="prop-example-2">
+  <input v-model="parentMsg">
+  <br>
+  <child v-bind:my-message="parentMsg"></child>
+</div>
+```
+
+如果你想把一个对象的所有属性作为 prop 进行传递，可以使用不带任何参数的 v-bind (即用 v-bind 而不是 v-bind:prop-name)
+
+```
+todo: {
+  text: 'Learn Vue',
+  isComplete: false
+}
+
+<todo-item v-bind="todo"></todo-item>
+
+// 等价于
+
+<todo-item v-bind:text="todo.text" v-bind:isComplete="todo.text"></todo-item>
+```
+
+字面量语法 vs 动态语法
+
+prop验证
+
+非props特性
+
+### 自定义事件
+
+
+### 组件
+
+全局注册于局部注册
