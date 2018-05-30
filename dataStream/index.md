@@ -22,7 +22,6 @@ console.log(b)
 
 - Object.freeze
 - jquery $.extend
-- Object.assign
 - 解构操作符
 
 PureComponent组件做的其实就是对原来的Component组件的shouldComponentUpdate做了一层对新旧state props的比较，类似于
@@ -81,6 +80,7 @@ Immutable实现原理是持久化数据结构，也就是使用旧数据创建�
 Immutable 使用了 Structural Sharing（结构共享），即如果对象树中一个节点发生变化，只修改这个节点和受它影响的父节点，其它节点则进行共享
 
 
+
 
 ## mobx
 
