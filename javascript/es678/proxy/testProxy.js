@@ -1,10 +1,10 @@
 const obj = new Proxy({}, {
-    get: function(a, b, c) {
-        console.log(a, b, 'get')
-        return c
+    get: function(target, key, receiver) {
+        // console.log(a, b, 'get')
+        return Reflect.get(target, key, receiver)
     },
-    set: function(target, key) {
-        console.log(target, key)
+    set: function(target, key, value, receiver) {
+        return Reflect.set(target, key, value, receiver)
     }
 })
 

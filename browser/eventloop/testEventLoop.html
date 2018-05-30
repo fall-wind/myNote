@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>event renderer</title>
+</head>
+
+<body>
+    <div id='con'>this is con</div>
+    <script>
+        // // exp 1:
+        // var t = 0;
+        // var con = document.getElementById('con');
+        // con.onclick = function () {
+        //     setTimeout(function setTimeout1() {
+        //         con.textContent = t;
+        //     }, 0)
+        // };
+
+        // exp 2
+        // var con = document.getElementById('con');
+        // con.onclick = function () {
+        //     Promise.resolve().then(function ss() {
+        //         con.innerHTML = 0;
+        //         // con.textContext = 0;
+        //     })
+        // };
+
+        // exp 3
+        // var con = document.getElementById('con');
+        // con.onclick = function click1() {
+        //     setTimeout(function setTimeout1() {
+        //         con.textContent = 0;
+        //     }, 0)
+        //     setTimeout(function setTimeout2() {
+        //         con.textContent = 1;
+        //     }, 0)
+        // };
+
+        // // exp 4
+        // var con = document.getElementById('con');
+        // con.onclick = function () {
+        //     setTimeout(function setTimeout1() {
+        //         con.textContent = 0;
+        //         Promise.resolve().then(function Promise1() {
+        //             console.log('Promise1')
+        //         })
+        //     }, 0)
+        //     setTimeout(function setTimeout2() {
+        //         con.textContent = 1;
+        //         Promise.resolve().then(function Promise2() {
+        //             console.log('Promise2')
+        //         })
+        //     }, 0)
+        // };
+
+        // exp 8 requestAnimationFrame
+
+        var con = document.getElementById('con');
+        var i = 0;
+        var raf = function () {
+            requestAnimationFrame(function () {
+                con.textContent = i;
+                Promise.resolve().then(function () {
+                    i++;
+                    if (i < 3) raf();
+                });
+            });
+        }
+        con.onclick = function () {
+            raf();
+        };
+
+    </script>
+</body>
+
+</html>
