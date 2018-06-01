@@ -3,6 +3,9 @@ const produce = require('immer').default
 const a = {
     b: {
         c: 1
+    },
+    c: {
+
     }
 }
 
@@ -28,6 +31,6 @@ const newArr = produce(arr, copyArr => {
     copyArr[0].a = 'sssss'
 })
 
-console.log(a)
-console.log(newA, '????')
+// console.log(a)
+// console.log(newA, '????')
 console.log(arr, newArr, '????')

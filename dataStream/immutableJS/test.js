@@ -19,14 +19,16 @@ let obj = {
 	a: {
 		b: {
 			c: 1,
-		},
+        },
+        
 	},
 }
 
 let objMap1 = Immutable.fromJS(obj)
 
 let objMap2 = objMap1.setIn(['a', 'b', 'c'], 100)
-// console.log('objMap1:', objMap1.getIn(['a', 'b', 'c']), objMap2.getIn(['a', 'b', 'c']))
+console.log('objMap1:', objMap1.getIn(['a', 'b', 'c']), objMap2.getIn(['a', 'b', 'c']))
+// 
 
 // 对象
 let list1 = Immutable.List([1, 2, 3, 4])
@@ -54,11 +56,11 @@ let obj2Map1 = Immutable.fromJS(obj2)
 const obj2MapKeyArr = ['a', 'b', 0, 'c']
 let obj2Map2 = obj2Map1.setIn(obj2MapKeyArr, 3)
 
-// console.log(obj2Map1.getIn(obj2MapKeyArr), obj2Map2.getIn(obj2MapKeyArr))
-// console.log(obj2Map1.getIn(['a', 1]), obj2Map1.getIn(['a', '1']))
-// console.log(obj2Map1.getIn(['a']) === obj2Map2.getIn(['a']))
-// console.log(obj2Map1.getIn(['a','b']) === obj2Map2.getIn(['a','b']))
-// console.log(obj2Map1.getIn(['a','b', 1]) === obj2Map2.getIn(['a','b', 1]))
+console.log(obj2Map1.getIn(obj2MapKeyArr), obj2Map2.getIn(obj2MapKeyArr))
+console.log(obj2Map1.getIn(['a', 1]), obj2Map1.getIn(['a', '1']))
+console.log(obj2Map1.getIn(['a']) === obj2Map2.getIn(['a']))
+console.log(obj2Map1.getIn(['a','b']) === obj2Map2.getIn(['a','b']))
+console.log(obj2Map1.getIn(['a','b', 1]) === obj2Map2.getIn(['a','b', 1]))
 
 // console.log(obj2Map2.toJS(), obj2Map2.toJS().a['1'])
 
