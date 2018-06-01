@@ -1,2 +1,9 @@
 .idea/
 *.iml
+
+node_modules
+.DS_Store
+
+**/node_modules
+**/build
+**/dist
