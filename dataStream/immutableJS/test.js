@@ -1,4 +1,4 @@
-console.log(Immutable)
+// console.log(Immutable)
 
 // 对象
 let map1 = Immutable.Map({

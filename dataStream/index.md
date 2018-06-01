@@ -1,4 +1,6 @@
-一个问题引发的
+## 两个问题
+
+### 第一个
 
 ``` JavaScript
 case 'changeItemStatus' {
@@ -13,9 +15,37 @@ case 'changeItemStatus' {
         ...state,
         todoList,
     }
+    
+    // or
+
+    const newList = [...todoList]
+    newList.forEach(item => {
+        if (item.name === name) {
+            item.done = !item.done
+        }
+    })
+
+    return {
+        ...state,
+        todoList: newList,
+    }
 }
 
 ```
+
+### 第二个
+
+前端根据数据和筛选条件过滤（衍生值）
+
+``` javaScript
+const initState = {
+    data: [],
+    params: '',
+}
+
+```
+
+做法
 
 ## redux
 
@@ -197,6 +227,8 @@ MobX背后的哲学很简单:
 
 #### Computed values（计算值）
 
+类比于 reselect
+
 #### Reactions(反应)
 MobX 会对在执行跟踪函数期间读取的任何现有的可观察属性做出反应。
 
@@ -219,3 +251,4 @@ MobX 会对在执行跟踪函数期间读取的任何现有的可观察属性做
 - [https://cn.mobx.js.org/](https://cn.mobx.js.org/)
 - [https://ckinmind.github.io/mobx-share](https://ckinmind.github.io/mobx-share)
 - [https://zhuanlan.zhihu.com/p/34691516](https://zhuanlan.zhihu.com/p/34691516)
+- [https://github.com/loatheb/tiny-all-over-the-world](https://github.com/loatheb/tiny-all-over-the-world)
