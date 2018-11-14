@@ -1,19 +1,46 @@
-const a = {
-	a: {
-		b: {
-			c: 1,
-		},
-	},
+function commonGet(itemKey) {
+    return function get(target, key) {
+        if (key in target) {
+            console.error(itemKey, 'xxxxxxx')
+            return target[key]
+        }
+        return true
+    }
 }
 
-const newA = new Proxy(a, {
-	get(target, key, id) {
-        console.log('proxy get key', key)
-        return new Reflect(id)
-	},
-	set(target, key, value) {
-		console.log('value', value)
-	},
+let thirdLevelObjProxy = new Proxy(
+	{
+		value: 3,
+    },
+    {
+        get: commonGet('third')
+    }
+);
+
+let secondLevelObjProxy = new Proxy({
+    value: 2,
+    thirdLevelObj: thirdLevelObjProxy,
+}, {
+    get: commonGet('second')
 })
 
-console.log(newA.a)
+let firstLevelObjProxy = new Proxy({ value: 1, secondLevelObj: secondLevelObjProxy }, {
+    get: commonGet('first')
+})
+
+const nestedObj = {
+    value: 0,
+    firstLevelObj: firstLevelObjProxy,
+	// firstLevelObj: {
+	// 	value: 1,
+	// 	secondLevelObj: {
+	// 		value: 2,
+	// 		thirdLevelObj: {
+	// 			value: 3,
+	// 		},
+	// 	},
+	// },
+};
+
+console.error(nestedObj.firstLevelObj)
+// console.error(nestedObj.firstLevelObj.secondLevelObj.thirdLevelObj.value)

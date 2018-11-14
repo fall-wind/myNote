@@ -25,6 +25,16 @@ case 'changeItemStatus' {
         }
     })
 
+    const newList = todoList.map(item => {
+        if (item.name === name) {
+            return {
+                ...item,
+                done: !item.done
+            }
+        }
+        return item
+    })
+
     return {
         ...state,
         todoList: newList,
@@ -46,6 +56,11 @@ const initState = {
 ```
 
 做法
+
+- 1
+- 2
+
+--------------
 
 ## redux
 
@@ -223,14 +238,15 @@ MobX背后的哲学很简单:
 
 ### 核心概念
 
-#### Observable State（可观察的状态）
+#### State
 
-#### Computed values（计算值）
+Observable State（可观察的状态）
 
-类比于 reselect
-
-#### Reactions(反应)
+#### Derivations(衍生)
 MobX 会对在执行跟踪函数期间读取的任何现有的可观察属性做出反应。
+
+- Computed values（计算值）：类比于 reselect
+- Reactions(反应)： Reactions 是当状态改变时需要自动发生的副作用
 
 #### Actions(动作)
 
@@ -251,4 +267,5 @@ MobX 会对在执行跟踪函数期间读取的任何现有的可观察属性做
 - [https://cn.mobx.js.org/](https://cn.mobx.js.org/)
 - [https://ckinmind.github.io/mobx-share](https://ckinmind.github.io/mobx-share)
 - [https://zhuanlan.zhihu.com/p/34691516](https://zhuanlan.zhihu.com/p/34691516)
+- [https://juejin.im/post/5a72f3adf265da4e83263548](https://juejin.im/post/5a72f3adf265da4e83263548)
 - [https://github.com/loatheb/tiny-all-over-the-world](https://github.com/loatheb/tiny-all-over-the-world)
