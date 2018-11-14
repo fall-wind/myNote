@@ -1,6 +1,5 @@
-长期进行中。。。
+# 说明
 
+本分支开发，长期进行  
 
-## new concept to me
-
-- lambda演算
+master分支暂无内容
