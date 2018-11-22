@@ -11,11 +11,9 @@ class MyPromise {
 		this.data = null;
 		this.resolveCbs = [];
         this.rejectCbs = [];
-        // console.error('????XXXXX', handler, '>>>>XXXX')
 		try {
 			handler(this.resolve.bind(this), this.reject.bind(this));
 		} catch (error) {
-            console.error(error, 'XXXX')
 			this.reject(error);
 		}
 	}
@@ -28,11 +26,9 @@ class MyPromise {
 	then(resolve, reject) {
         const { status, data, error } = this
 		return new MyPromise(function(nextResolve, nextReject) {
-			// console.error(status, 'XXXXX');
 			function useResolve(result) {
 				if (typeof resolve === 'function') {
                     const res = resolve(result);
-                    console.error(res, 'res....')
 					if (res instanceof MyPromise) {
 						res.then(nextResolve, nextReject);
 					} else {
@@ -89,10 +85,8 @@ class MyPromise {
 
 const p1 = new MyPromise(function(resolve, reject) {
 	console.error(111111);
-	// resolve('22222')
 	resolve('error');
 }).then(result => {
-    console.error(result, 222222);
     return new Promise(function(resolve) {
         setTimeout(() => {
             resolve('set time out...')

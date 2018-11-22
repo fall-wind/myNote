@@ -1,3 +1,4 @@
+// 判断变量否为function
 const isFunction = variable => typeof variable === 'function';
 // 定义Promise的三种状态常量
 const PENDING = 'PENDING';
@@ -43,8 +44,8 @@ class MyPromise {
 				}
 			};
 			/* 如果resolve的参数为Promise对象，则必须等待该Promise对象状态改变后,
-          当前Promsie的状态才会改变，且状态取决于参数Promsie对象的状态
-        */
+        当前Promsie的状态才会改变，且状态取决于参数Promsie对象的状态
+      */
 			if (val instanceof MyPromise) {
 				val.then(
 					value => {
@@ -210,20 +211,18 @@ class MyPromise {
 }
 
 const p1 = new Promise(function(resolve, reject) {
-	console.error(111111);
-	// resolve('22222')
-	resolve('error');
-}).then(result => {
-    console.error(result, 222222);
-    return new Promise(function(resolve) {
-        setTimeout(() => {
-            resolve('set time out...')
-        }, 1000)
-    })
-}).then(result => {
-    console.error(result, 'final result...')
-});
-
-setTimeout(() => {
-    console.error(p1, 'xxx')
-}, 2000)
+    setTimeout(() => {
+        resolve('error');
+    }, 1000);
+})
+	.then(result => {
+		console.error(result, 222222);
+		return new Promise(function(resolve) {
+			setTimeout(() => {
+				resolve('set time out...');
+			}, 1000);
+		});
+	})
+	.then(result => {
+		console.error(result, 'final result...');
+	});
