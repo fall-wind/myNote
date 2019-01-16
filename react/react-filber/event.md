@@ -1,5 +1,7 @@
 # React 事件系统源码分析
 
+版本 v16.7
+
 # 通用事件插件系统
 
 来自源码
@@ -64,23 +66,37 @@
 
 # 注册事件
 
-<!-- 我们当做props传递给组件的onClick onChange是如何绑定到DOM上的尼？？ -->
+在初始化组件和更新组件的时候会根据属性的类型设置类型，而对事件有着特殊的处理：
+具体的代码在`ReactDOMComponent.js`中的[`setInitialDOMProperties`](https://github.com/facebook/react/blob/v16.7.0/packages/react-dom/src/client/ReactDOMComponent.js#L339)方法内
 
--   finalizeInitialChildren
--   setInitialProperties
--   setInitialDOMProperties
--   listenTo
+```javascript
+if (registrationNameModules.hasOwnProperty(propKey)) {
+	if (nextProp != null) {
+		ensureListeningTo(rootContainerElement, propKey);
+	}
+}
+```
 
-在 ReactFiberCompleteWork 的时候
+registrationNameModules：
 
-在 updateHostComponent 调用  
-completeWork 的时候当 tag 为 HostComponent 调用
+![image](./static/registrationNameModules.png)
 
-top+eventType
+先从具体的例子来分析
 
-### listenTo
+```javascript
+class Test extends React.Component {
+    handleClick = () => {
+        console.error('click....')
+    }
 
-兼容了各个浏览器，先从 click 事件说起
+    render() {
+        return (
+            <div onClick={this.handleClick}>click me</div>
+        )
+    }
+}
+```
+显然`registrationNameModules.hasOwnProperty('onClick')`是成立的，然后将我们的根元素`rootContainerElement`和当前的`propsKey`当做参数调用[`ensureListeningTo`](https://github.com/facebook/react/blob/v16.7.0/packages/react-dom/src/client/ReactDOMComponent.js#L256)，这个方法其实就是找到`document`，将它和`propsKey`当做参数传入[`listenTo`](https://github.com/facebook/react/blob/v16.7.0/packages/react-dom/src/events/ReactBrowserEventEmitter.js#L126)方法调用。
 
 ```javascript
 export function listenTo(registrationName, mountAt) {
@@ -108,45 +124,23 @@ export function listenTo(registrationName, mountAt) {
 	}
 }
 ```
-
-```javascript
-const topListenersIDKey = '_reactListenersID' + ('' + Math.random()).slice(2);
-let reactTopListenersCounter = 0;
-
-function getListeningForDocument(mountAt: any) {
-	// In IE8, `mountAt` is a host object and doesn't have `hasOwnProperty`
-	// directly.
-	if (!Object.prototype.hasOwnProperty.call(mountAt, topListenersIDKey)) {
-		mountAt[topListenersIDKey] = reactTopListenersCounter++;
-		alreadyListeningTo[mountAt[topListenersIDKey]] = {};
-	}
-	return alreadyListeningTo[mountAt[topListenersIDKey]];
-}
-```
-
-如果当前 Document 对象上没有`topListenersIDKey`属性，将`topListenersIDKey`加 1 并`alreadyListeningTo`上对应的值置为空对象。  
-如果有`topListenersIDKey`这个属性则将`topListenersIDKey`上的值直接返回
-
 registrationNameDependencies：
 
-![image](./static/reg-name-deps.png)
+![image](./static/registrationNameDependencies.png)
 
-如上图，onClick 对应着 onClick 事件，onChange 对应着 "blur", "change", "click", "focus", "input", "keydown", "keyup", "selectionchange"事件。
+如上图，`onClick`对应着单个click（像`onChange`对应的就多了）。所以此时的`dependencies`为`['click']`，而注册同一种事件类型只会被注册到document一次；而`isListening`的作用就是为此。
 
-再来看这个循环，如果满足`isListening`不存在 属性 `dependency`或者 存在这个属性为一个 false 值
-
-```javascript
-!(isListening.hasOwnProperty(dependency) && isListening[dependency])
-
-// 相当于
-!isListening.hasOwnProperty(dependency) || !isListening[dependency])
-```
-
-React 忽略媒体事件？
-
-## trapBubbledEvent
+[`trapBubbledEvent`](https://github.com/facebook/react/blob/v16.7.0/packages/react-dom/src/events/ReactDOMEventListener.js#L137)
 
 ```javascript
+function addEventCaptureListener(
+  element: Document | Element,
+  eventType: string,
+  listener: Function,
+): void {
+  element.addEventListener(eventType, listener, true);
+}
+
 function trapBubbledEvent(topLevelType, element) {
 	if (!element) {
 		return null;
@@ -163,12 +157,9 @@ function trapBubbledEvent(topLevelType, element) {
 	);
 }
 ```
+这一步主要是在`document`设置监听回调，下面是细节：
 
 先看一下`simpleEventPlugin`这个插件
-
-topLevelEventsToDispatchConfig:
-
-![image](./static/topLevelEventsToDispatchConfig.png)
 
 ```javascript
 SimpleEventPlugin = {
@@ -180,7 +171,9 @@ SimpleEventPlugin = {
 };
 ```
 
-显然对于`click`事件 `isInteractiveTopLevelEventType`返回值是一个 true
+topLevelEventsToDispatchConfig:
+![image](./static/topLevelEventsToDispatchConfig.png)
+显然对于`click`事件 `isInteractiveTopLevelEventType`返回值是一个`true`
 
 ```javascript
 let _interactiveUpdatesImpl = function(fn, a, b) {
@@ -196,17 +189,9 @@ function dispatchInteractiveEvent(topLevelType, nativeEvent) {
 }
 ```
 
-`dispatchInteractiveEvent`实际上就是调用 `dispatchEvent`函数，并将`topLevelType`, `nativeEvent`当做参数传入到`dispatchEvent`。 而`dispatchEvent`就到了发布事件的阶段
+`dispatchInteractiveEvent`实际上就是调用 `dispatchEvent`函数。
 
-## `addEventCaptureListener`
-
-```javascript
-function addEventCaptureListener(element, eventType, listener): void {
-	element.addEventListener(eventType, listener, true);
-}
-```
-
-这段代码就是使用`addEventListener`将事件注册到`document`上。
+// TODO 两者的区别
 
 # 发布事件
 
@@ -215,20 +200,13 @@ function dispatchEvent(topLevelType, nativeEvent) {
 	if (!_enabled) {
 		return;
 	}
-
 	const nativeEventTarget = getEventTarget(nativeEvent);
-
-	// 获取最近fiber
 	let targetInst = getClosestInstanceFromNode(nativeEventTarget);
 	if (
 		targetInst !== null &&
 		typeof targetInst.tag === 'number' &&
 		!isFiberMounted(targetInst)
 	) {
-		// If we get an event (ex: img onload) before committing that
-		// component's mount, ignore it for now (that is, treat it as if it was an
-		// event on a non-React tree). We might also consider queueing events and
-		// dispatching them after the mount.
 		targetInst = null;
 	}
 
@@ -239,148 +217,30 @@ function dispatchEvent(topLevelType, nativeEvent) {
 	);
 
 	try {
-		// Event queue being processed in the same cycle allows
-		// `preventDefault`.
 		batchedUpdates(handleTopLevel, bookKeeping);
 	} finally {
 		releaseTopLevelCallbackBookKeeping(bookKeeping);
 	}
 }
 ```
+首先获取当前的原生事件对应的DOM，再找到对应的临近的一个fiber。  
+然后就是一个判断一个当前是否正在渲染的逻辑（具体逻辑先不细究）
 
+[`getTopLevelCallbackBookKeeping`](https://github.com/facebook/react/blob/v16.7.0/packages/react-dom/src/events/ReactDOMEventListener.js#L50)方法与`callbackBookkeepingPool`对象和[`releaseTopLevelCallbackBookKeeping`](https://github.com/facebook/react/blob/v16.7.0/packages/react-dom/src/events/ReactDOMEventListener.js#L75)构建了一套`bookkeeping`对象的复用系统。
+
+具体为：`getTopLevelCallbackBookKeeping`先从`callbackBookkeepingPool`对象池中获取一个对象，如果不存在则创建一个初始对象，在这个对象使用完毕之后，将所有的值置为null 或空数组，回收到`callbackBookkeepingPool`这个对象池中。这也是React做的一个优化。
+
+一个bookkeep对象的结构为：
 ```javascript
-function getEventTarget(nativeEvent) {
-	// Fallback to nativeEvent.srcElement for IE9
-	// https://github.com/facebook/react/issues/12506
-	let target = nativeEvent.target || nativeEvent.srcElement || window;
-
-	// Normalize SVG <use> element events #4963
-	if (target.correspondingUseElement) {
-		target = target.correspondingUseElement;
-	}
-
-	// Safari may fire events on text nodes (Node.TEXT_NODE is 3).
-	// @see http://www.quirksmode.org/js/events_properties.html
-	return target.nodeType === TEXT_NODE ? target.parentNode : target;
+const bookKeeping = {
+    topLevelType: null,
+    nativeEvent: null,
+    targetInst: null,
+    ancestors: [],
 }
 ```
 
-获取到事件源 并做了跨平台的兼容。 如果当前是一个文字节点 则事件源为他的父元素。
-
-```javascript
-const randomKey = Math.random()
-	.toString(36)
-	.slice(2);
-const internalInstanceKey = '__reactInternalInstance$' + randomKey;
-
-export function getClosestInstanceFromNode(node) {
-	if (node[internalInstanceKey]) {
-		return node[internalInstanceKey];
-	}
-
-	while (!node[internalInstanceKey]) {
-		if (node.parentNode) {
-			node = node.parentNode;
-		} else {
-			// Top of the tree. This node must not be part of a React tree (or is
-			// unmounted, potentially).
-			return null;
-		}
-	}
-
-	let inst = node[internalInstanceKey];
-	if (inst.tag === HostComponent || inst.tag === HostText) {
-		// In Fiber, this will always be the deepest root.
-		return inst;
-	}
-
-	return null;
-}
-```
-
-如果当前元素上有`internalInstanceKey`属性（fiber 节点），则返回；如果没有则向他的父元素查找，如果都没有则返回 null；
-
-如果当前元素的某一个上级元素包含`internalInstanceKey`属性。如果当前 fiber 是一个`Host` 或者是`HostText`类型，则返回这个 fiber；否则返回 null
-
-继续向下走：
-
-```javascript
-function isFiberMountedImpl(fiber: Fiber): number {
-	let node = fiber;
-	if (!fiber.alternate) {
-		// If there is no alternate, this might be a new tree that isn't inserted
-		// yet. If it is, then it will have a pending insertion effect on it.
-		if ((node.effectTag & Placement) !== NoEffect) {
-			return MOUNTING;
-		}
-		while (node.return) {
-			node = node.return;
-			if ((node.effectTag & Placement) !== NoEffect) {
-				return MOUNTING;
-			}
-		}
-	} else {
-		while (node.return) {
-			node = node.return;
-		}
-	}
-	if (node.tag === HostRoot) {
-		// TODO: Check if this was a nested HostRoot when used with
-		// renderContainerIntoSubtree.
-		return MOUNTED;
-	}
-	// If we didn't hit the root, that means that we're in an disconnected tree
-	// that has been unmounted.
-	return UNMOUNTED;
-}
-
-function isFiberMounted(fiber) {
-	return isFiberMountedImpl(fiber) === MOUNTED;
-}
-```
-
-主要目的是判断 fiber 是否渲染，逻辑如下：
-
-如果当前 fiber 没有`alternate`备份 fiber 说明新的树还没有被插入；且当前 或者它向上的父节点存在满足`(node.effectTag & Placement) !== NoEffect`返回正在渲染；
-
-否则，找到 fiber 的根节点 fiberRoot; 如果当前的 tag 为`HostRoot`则返回渲染完毕；如果我们没找到 fiberRoot 则说明这是一颗被销毁了的树；
-
-那让我们回到`dispatchEvent`： 这个判断条件主要是作用：找到最近的 host fiber，如果当前正在渲染或已经被销毁；则将`targetInst`置为 null；注释的解释为 如果我们在 commit 组件的渲染之前就或接收到这个事件，在当时忽略它；我们也会考虑排队的事件，在渲染之后发布它们。
-
-```javascript
-function getTopLevelCallbackBookKeeping(topLevelType, nativeEvent, targetInst) {
-	if (callbackBookkeepingPool.length) {
-		const instance = callbackBookkeepingPool.pop();
-		instance.topLevelType = topLevelType;
-		instance.nativeEvent = nativeEvent;
-		instance.targetInst = targetInst;
-		return instance;
-	}
-	return {
-		topLevelType,
-		nativeEvent,
-		targetInst,
-		ancestors: [],
-	};
-}
-```
-
-如果当前的`callbackBookkeepingPool`存在回调；则出栈，将参数赋给这个 inst；否则将参数组合成一个对象；
-
-那`callbackBookkeepingPool`内的数据是哪里来的尼？
-
-```javascript
-function releaseTopLevelCallbackBookKeeping(instance) {
-	instance.topLevelType = null;
-	instance.nativeEvent = null;
-	instance.targetInst = null;
-	instance.ancestors.length = 0;
-	if (callbackBookkeepingPool.length < CALLBACK_BOOKKEEPING_POOL_SIZE) {
-		callbackBookkeepingPool.push(instance);
-	}
-}
-```
-
+[`batchedUpdates`](https://github.com/facebook/react/blob/v16.7.0/packages/events/ReactGenericBatching.js#L29)现在先简单看作是一个方法的调用，所以后面的逻辑就在[`handleTopLevel`](https://github.com/facebook/react/blob/v16.7.0/packages/react-dom/src/events/ReactDOMEventListener.js#L85)的调用上
 ```javascript
 function findRootContainerNode(inst) {
 	// TODO: It may be a good idea to cache this to prevent unnecessary DOM
@@ -425,27 +285,37 @@ function handleTopLevel(bookKeeping) {
 	}
 }
 ```
+正常使用我们只有一个根节点，即`bookKeeping.ancestors`的长度为1，那什么情况下长度大于1尼？
+```javascript
+class Test extends React.Component {
+    componentDidMount() {
+        ReactDOM.render(<div onClick={() => {
+            console.error('l am clicked...')
+        }}>
+            second
+        </div>, document.getElementById('#subApp'))
+    }
 
-遍历层次结构，以防有任何嵌套的组件（可能指再次使用了 ReactDOM.render 到现在的 React 节点上）。在调用所有的事件回调之前构建祖先的数组是很重要的，因为事件回调可能会修改 DOM，导致与 ReactMount 的节点缓存不一致。
+    render() {
+        return (
+            <div>
+                <div className="subApp"></div>
+                <button></button>
+            </div>
+        )
+    }
+}
+```
+此时`bookKeeping.ancestors`长度为2，一个为当前对应的fiber， 一个是id为subApp的对应的fiber。
+
+接着是调用[`runExtractedEventsInBatch`](https://github.com/facebook/react/blob/master/packages/events/EventPluginHub.js#L212)
+这个方法可以分为两个部分：
+
+- 提取事件对象
+- 执行事件对象上的回调
 
 ```javascript
 // EventPluginRegistry.js
-export const plugins = [];
-
-function extractEvents(
-	topLevelType,
-	targetInst,
-	nativeEvent,
-	nativeEventTarget,
-) {
-	let events = null;
-	for (let i = 0; i < plugins.length; i++) {
-		// Not every plugin in the ordering may be loaded at runtime.
-		// some thing...
-	}
-	return events;
-}
-
 export function runExtractedEventsInBatch(
 	topLevelType,
 	targetInst,
@@ -462,223 +332,66 @@ export function runExtractedEventsInBatch(
 }
 ```
 
-先看`extractEvents`先关的变量`plugins`,初始时为一个空数组，在哪里注入的尼？
-
-在`ReactDOM`文件引入了`ReactDOMClientInjection.js`文件 引入`EventPluginHub.js`的 `injection`作为`EventPluginHubInjection`,执行`EventPluginHubInjection.injectEventPluginOrder`, `EventPluginHubInjection.injectEventPluginsByName`, plugin 注入的顺序如下：
-
-```javascript
-// ReactDOMClientInjection.js
-const DOMEventPluginOrder = [
-	'ResponderEventPlugin',
-	'SimpleEventPlugin',
-	'EnterLeaveEventPlugin',
-	'ChangeEventPlugin',
-	'SelectEventPlugin',
-	'BeforeInputEventPlugin',
-];
-
-// 在浏览器环境所插入的插件为
-
-EventPluginHubInjection.injectEventPluginsByName({
-	SimpleEventPlugin: SimpleEventPlugin,
-	EnterLeaveEventPlugin: EnterLeaveEventPlugin,
-	ChangeEventPlugin: ChangeEventPlugin,
-	SelectEventPlugin: SelectEventPlugin,
-	BeforeInputEventPlugin: BeforeInputEventPlugin,
-});
-```
-
-具体逻辑在`EventPluginRegistry`中 我们先看代码
+### 提取事件对象
+有关提取事件对象这就涉及到了事件插件机制了，
 
 ```javascript
-let eventPluginOrder: EventPluginOrder = null;
-const namesToPlugins: NamesToPlugins = {};
-
-function recomputePluginOrdering() {
-	if (!eventPluginOrder) {
-		// Wait until an `eventPluginOrder` is injected.
-		return;
+function extractEvents(
+	topLevelType,
+	targetInst,
+	nativeEvent,
+	nativeEventTarget,
+) {
+	let events = null;
+	for (let i = 0; i < plugins.length; i++) {
+		// ....
 	}
-	for (const pluginName in namesToPlugins) {
-		const pluginModule = namesToPlugins[pluginName];
-		const pluginIndex = eventPluginOrder.indexOf(pluginName);
-		if (plugins[pluginIndex]) {
-			continue;
-		}
-		plugins[pluginIndex] = pluginModule;
-		const publishedEvents = pluginModule.eventTypes;
-		for (const eventName in publishedEvents) {
-			invariant(
-				publishEventForPlugin(
-					publishedEvents[eventName],
-					pluginModule,
-					eventName,
-				),
-				'EventPluginRegistry: Failed to publish event `%s` for plugin `%s`.',
-				eventName,
-				pluginName,
-			);
-		}
-	}
+	return events;
 }
 
-export function injectEventPluginOrder(injectedEventPluginOrder) {
-	// Clone the ordering so it cannot be dynamically mutated.
-	eventPluginOrder = Array.prototype.slice.call(injectedEventPluginOrder);
-	recomputePluginOrdering();
-}
 ```
+目前浏览器端使用到了五种插件
 
-在 ReactDOM 加载的时候，`EventPluginHubInjection.injectEventPluginOrder`的调用在`EventPluginRegistry`中写入`eventPluginOrder`，;执行`recomputePluginOrdering`；此时`namesToPlugins`内并没有任何插件的名称。
+- SimpleEventPlugin：简单事件插件，提取基本的合成事件
+- EnterLeaveEventPlugin：鼠标移入移出事件，
+- ChangeEventPlugin： change事件插件
+- SelectEventPlugin： 选择事件
+- BeforeInputEventPlugin：
 
-```javascript
-// EventPluginRegistry.js
-export function injectEventPluginsByName(injectedNamesToPlugins) {
-	let isOrderingDirty = false;
-	for (const pluginName in injectedNamesToPlugins) {
-		if (!injectedNamesToPlugins.hasOwnProperty(pluginName)) {
-			continue;
-		}
-		const pluginModule = injectedNamesToPlugins[pluginName];
-		if (
-			!namesToPlugins.hasOwnProperty(pluginName) ||
-			namesToPlugins[pluginName] !== pluginModule
-		) {
-			namesToPlugins[pluginName] = pluginModule;
-			isOrderingDirty = true;
-		}
-	}
-	if (isOrderingDirty) {
-		recomputePluginOrdering();
-	}
-}
-```
+simpleEventPlugin事件返回一个基本的合成事件对象，其他的四种事件主要是做事件的兼容处理， 使得合成事件行为尽量与原生；保证各个浏览器交互一致。  
 
-继续执行`EventPluginHubInjection.injectEventPluginsByName`, 在注入插件的时候，第一步就是标记此时`isOrderingDirty`为`false`，遍历参数`injectedNamesToPlugins`与`namesToPlugins`对比 如果`injectedNamesToPlugins`中的一项在`namesToPlugins`中不存在或者不相等，则更新`namesToPlugins`的值，并标记`isOrderingDirty`为 true，并在遍历结束 调用`recomputePluginOrdering`重新排序。让我们接着看看重新排序的逻辑基本上就是按照`如果eventPluginOrder`的顺序来。在排序的同时，顺便将值赋值给`plugins`。
+遍历所有的插件，调用`extractEvents`方法，将各自返回的合成事件对象合并，最后返回值可能为`null` 合成事件对象或合成事件对象数组。
 
-那我们在回过头来看`extractEvents`内的遍历 plugins 逻辑
+每个插件生成合成事件公用逻辑为：
 
-```javascript
-const possiblePlugin = plugins[i];
-if (possiblePlugin) {
-	const extractedEvents = possiblePlugin.extractEvents(
-		topLevelType,
-		targetInst,
-		nativeEvent,
-		nativeEventTarget,
-	);
-	if (extractedEvents) {
-		events = accumulateInto(events, extractedEvents);
-	}
-}
-```
-
-每个事件插件都有一个`extractEvents`，我们先来看`SimpleEventPlugin`，就看
+拿冒泡事件举例：先从当前事件类型的事件池中拿到一个事件对象，向上遍历虚拟dom tree找具有相同的事件类型的祖先节点，获取该节点上的回调。
+之后将这个实例、回调分别收集到`event`合成对象的`_dispatchListeners`,`_dispatchListeners`属性上。
 
 ```javascript
 // SimpleEventPlugin
 const SimpleEventPlugin = {
-    extractEvents: function(
-        topLevelType,
-        targetInst,
-        nativeEvent,
-        nativeEventTarget
-    ) {
-        const dispatchConfig = topLevelEventsToDispatchConfig[topLevelType];
-        if (!dispatchConfig) {
-        return null;
-        }
-        let Event
-    }
-}
-
-```
-
-// TODO 作用 目的
-来自于`batchedUpdates`之后的`releaseTopLevelCallbackBookKeeping`；
-
-来看`batchedUpdates`
-
-```javascript
-let isBatching = false;
-export function batchedUpdates(fn, bookkeeping) {
-	if (isBatching) {
-		// If we are currently inside another batch, we need to wait until it
-		// fully completes before restoring state.
-		return fn(bookkeeping);
-	}
-	isBatching = true;
-	try {
-		return _batchedUpdatesImpl(fn, bookkeeping);
-	} finally {
-		// Here we wait until all updates have propagated, which is important
-		// when using controlled components within layers:
-		// https://github.com/facebook/react/issues/1698
-		// Then we restore state of any controlled component.
-		isBatching = false;
-		const controlledComponentsHavePendingUpdates = needsStateRestore();
-		if (controlledComponentsHavePendingUpdates) {
-			// If a controlled event was fired, we may need to restore the state of
-			// the DOM node back to the controlled value. This is necessary when React
-			// bails out of the update without touching the DOM.
-			_flushInteractiveUpdatesImpl();
-			restoreStateIfNeeded();
-		}
-	}
-}
-```
-
-如果当前`isBatching`为`true`，则直接调用你在元素上绑定的函数；为`false`，将先将`isBatching`置为 true，调用`_batchedUpdatesImpl`, 然后调用`needsStateRestore`, 这个`_batchedUpdatesImpl`来自哪里？在`ReactGenericBatching.js`文件提供了一个`setBatchingImplementation`方法，在`ReactDOM`文件中被设置，可以理解为在应用的一开始就被设置，而这些方法 `interactiveUpdates`, `batchedUpdatesImpl`, `flushInteractiveUpdates` 都来自`ReactFiberScheduler`文件，即来自于调度器；
-
-// TODO 作用
-
-```javascript
-let restoreTarget = null;
-let restoreQueue = null;
-
-export function needsStateRestore(): boolean {
-	return restoreTarget !== null || restoreQueue !== null;
-}
-```
-
-```javascript
-export function restoreStateIfNeeded() {
-	if (!restoreTarget) {
-		return;
-	}
-	const target = restoreTarget;
-	const queuedTargets = restoreQueue;
-	restoreTarget = null;
-	restoreQueue = null;
-
-	restoreStateOfTarget(target);
-	if (queuedTargets) {
-		for (let i = 0; i < queuedTargets.length; i++) {
-			restoreStateOfTarget(queuedTargets[i]);
-		}
-	}
-}
-
-if (controlledComponentsHavePendingUpdates) {
-	// If a controlled event was fired, we may need to restore the state of
-	// the DOM node back to the controlled value. This is necessary when React
-	// bails out of the update without touching the DOM.
-	_flushInteractiveUpdatesImpl();
-	restoreStateIfNeeded();
-}
-```
-
-```javascript
-function flushInteractiveUpdates() {
-	if (
-		!isRendering &&
-		lowestPriorityPendingInteractiveExpirationTime !== NoWork
+	extractEvents: function(
+		topLevelType,
+		targetInst,
+		nativeEvent,
+		nativeEventTarget,
 	) {
-		// Synchronously flush pending interactive updates.
-		performWork(lowestPriorityPendingInteractiveExpirationTime, false);
-		lowestPriorityPendingInteractiveExpirationTime = NoWork;
-	}
-}
+		const dispatchConfig = topLevelEventsToDispatchConfig[topLevelType];
+		if (!dispatchConfig) {
+			return null;
+		}
+		let EventConstructor;
+
+		//....
+		EventConstructor = SyntheticEvent;
+		const event = EventConstructor.getPooled(
+			dispatchConfig,
+			targetInst,
+			nativeEvent,
+			nativeEventTarget,
+		);
+		return event;
+	},
+};
 ```
 
-## Issue 如何理解插件机制
