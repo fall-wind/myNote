@@ -118,3 +118,9 @@ function accumulateInto<T>(
 
 `events`对象是一个数组是为了做浏览器的兼容，使得行为一致，这并不是事件队列
 
+
+
+
+## 推荐阅读文章链接
+
+- [https://www.lzane.com/tech/react-event-system-and-source-code/](https://www.lzane.com/tech/react-event-system-and-source-code/)

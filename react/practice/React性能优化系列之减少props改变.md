@@ -17,13 +17,15 @@ class ClickMe extends React.Component {
 	};
 
 	render() {
-		<Button
-			onClick={() => {
-				console.log('l am clicked!', this.state.value);
-			}}
-		>
-			click me
-		</Button>;
+        return (
+            <Button
+    			onClick={() => {
+    				console.log('l am clicked!', this.state.value);
+    			}}
+    		>
+    			click me
+    		</Button>
+        )
 	}
 }
 ```
@@ -44,13 +46,15 @@ class ClickMe extends React.Component {
 	};
 
 	render() {
-		<Button
-			onClick={() => {
-				console.log('l am clicked!', this.state.value);
-			}}
-		>
-			click me
-		</Button>;
+		return (
+            <Button
+    			onClick={() => {
+    				console.log('l am clicked!', this.state.value);
+    			}}
+    		>
+    			click me
+    		</Button>
+        )
 	}
 }
 
@@ -69,13 +73,15 @@ class ClickMe extends React.Component {
 	}
 
 	render() {
-		<Button
-			onClick={() => {
-				console.log('l am clicked!', this.state.value);
-			}}
-		>
-			click me
-		</Button>;
+        return (
+            <Button
+    			onClick={() => {
+    				console.log('l am clicked!', this.state.value);
+    			}}
+    		>
+    			click me
+    		</Button>
+        )
 	}
 }
 ```
